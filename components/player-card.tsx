@@ -1,14 +1,22 @@
-import Image from "next/image"
+import { useEffect, useState } from "react"
 
-export default function PlayerCard() {
+export default function PlayerCard({ img }: { img: string }) {
+  const [height, setHeight] = useState(0)
+
+  useEffect(() => {
+    const handleResize = () => setHeight(window.innerHeight * 0.45)
+    handleResize()
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
   return (
-    <div className="relative flex-shrink-0">
-      <Image
-        src="/assets/Vector.png"
+    <div style={{ height }} className="relative aspect-[3/4.5] mx-4">
+      <img
+        src={img}
         alt="Player"
-        width={200}
-        height={700}
-        className="object-cover"
+        className="object-cover rounded-xl shadow-lg w-full h-full"
       />
     </div>
   )

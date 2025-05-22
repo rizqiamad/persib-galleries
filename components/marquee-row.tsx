@@ -1,56 +1,37 @@
 "use client"
 
-import { useRef, useEffect } from "react"
+import Marquee from "react-fast-marquee"
 import PlayerCard from "./player-card"
+import { fetchUserData } from "../lib/supabase-client"
+import useSWR from "swr"
+import LoadingSpinner from "./loading-spinner"
 
 interface MarqueeRowProps {
-  direction: "left" | "right"
+  direction?: "left" | "right"
+  speed?: number
 }
 
-export default function MarqueeRow({ direction }: MarqueeRowProps) {
-  const scrollRef = useRef<HTMLDivElement>(null)
+export default function MarqueeRow({
+  direction = "left",
+  speed = 30,
+}: MarqueeRowProps) {
+  const { data, error, isLoading } = useSWR("user-data", fetchUserData, { refreshInterval: 300000 })
 
-  useEffect(() => {
-    const scrollContainer = scrollRef.current
-    if (!scrollContainer) return
-
-    const scrollSpeed = direction === "left" ? -1 : 1
-    let animationId: number
-    let currentScroll = 0
-
-    const scroll = () => {
-      if (!scrollContainer) return
-
-      currentScroll += scrollSpeed
-
-      // Reset when we reach the end
-      const firstItemWidth = scrollContainer.querySelector("div")?.offsetWidth || 0
-      const itemsCount = scrollContainer.childElementCount
-      const totalWidth = (firstItemWidth * itemsCount) / 2
-
-      if (Math.abs(currentScroll) >= totalWidth) {
-        currentScroll = 0
-      }
-
-      scrollContainer.style.transform = `translateX(${currentScroll}px)`
-      animationId = requestAnimationFrame(scroll)
-    }
-
-    scroll()
-
-    return () => {
-      cancelAnimationFrame(animationId)
-    }
-  }, [direction])
-
-  // Generate 8 cards for each row
-  const cards = Array.from({ length: 16 }).map((_, index) => <PlayerCard key={index} />)
+  if (isLoading) return <LoadingSpinner />;
+  if (error) return <p>Error: {error.message}</p>;
 
   return (
-    <div className="w-full overflow-hidden">
-      <div ref={scrollRef} className="flex gap-4 transition-transform" style={{ willChange: "transform" }}>
-        {cards}
-      </div>
-    </div>
+    <Marquee
+      direction={direction}
+      speed={speed}
+      gradient={false}
+      className="z-0 h-full flex"
+    >
+      {data && data.map((img, i) => {
+        return (
+          <PlayerCard key={i} img={img.imageurl} />
+        )
+      })}
+    </Marquee>
   )
 }
